@@ -30,6 +30,40 @@
         <div class="pd-nombre" id="pd-nombre"></div>
         <button class="btn-copiar" onclick="copiarNumero()">📋 Copiar número</button>
       </div>
+      <!-- DATOS DE ENVÍO -->
+      <div class="envio-seccion">
+        <div class="envio-titulo">📍 Datos de envío</div>
+        <div class="envio-grid">
+          <div class="envio-campo col-2">
+            <label for="envio-nombres">Nombres y apellidos *</label>
+            <input type="text" id="envio-nombres" placeholder="Ej: Juan Pérez" required autocomplete="name">
+          </div>
+          <div class="envio-campo">
+            <label for="envio-documento">Documento (C.C. / T.I.)</label>
+            <input type="text" id="envio-documento" placeholder="Ej: 1020304050">
+          </div>
+          <div class="envio-campo">
+            <label for="envio-telefono">Teléfono / WhatsApp *</label>
+            <input type="tel" id="envio-telefono" placeholder="Ej: 310 123 4567" required autocomplete="tel">
+          </div>
+          <div class="envio-campo col-2">
+            <label for="envio-direccion">Dirección completa *</label>
+            <input type="text" id="envio-direccion" placeholder="Ej: Cra 15 # 80-20 Apto 402" required autocomplete="street-address">
+          </div>
+          <div class="envio-campo">
+            <label for="envio-barrio">Barrio *</label>
+            <input type="text" id="envio-barrio" placeholder="Ej: Polo / Santa Sofía" required>
+          </div>
+          <div class="envio-campo">
+            <label for="envio-ciudad">Ciudad *</label>
+            <input type="text" id="envio-ciudad" placeholder="Ej: Bogotá" value="Bogotá" required>
+          </div>
+          <div class="envio-campo col-2">
+            <label for="envio-departamento">Departamento *</label>
+            <input type="text" id="envio-departamento" placeholder="Ej: Bogotá D.C." value="Bogotá D.C." required>
+          </div>
+        </div>
+      </div>
       <div class="pasos">
         <div class="paso"><div class="paso-num">1</div><div class="paso-txt" id="paso-1"></div></div>
         <div class="paso"><div class="paso-num">2</div><div class="paso-txt">Toca <strong>"Confirmar y enviar"</strong> — se abre WhatsApp con tu pedido</div></div>

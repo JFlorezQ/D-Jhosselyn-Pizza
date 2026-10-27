@@ -304,10 +304,31 @@ function selMetodo(i){
   var m=metodos[i],contra=m.tipo==="contraentrega";
   $("pago-datos").style.display=contra?"none":"";
   $("paso-1").innerHTML=contra?esc(D.pagos.contraentregaDetalle||"Paga el total exacto cuando recibas tu pedido"):'Transfiere a <strong>'+esc(numeroBonito(D.pagos.numeroTransferencia))+'</strong> el total exacto por <strong>'+esc(m.nombre)+'</strong>';
-  $("paso-3").innerHTML=contra?"<strong>Completa tus datos de envío</strong> en el chat y envía":"<strong>Adjunta la captura</strong> del pago en el chat y envía";
+  $("paso-3").innerHTML=contra?"Tu pedido será despachado a la dirección indicada":"<strong>Adjunta la captura</strong> del pago en el chat y envía";
+}
+function cargarDatosEnvio(){
+  var d=leer("datos_envio",{});
+  if($("envio-nombres"))$("envio-nombres").value=d.nombres||"";
+  if($("envio-documento"))$("envio-documento").value=d.documento||"";
+  if($("envio-telefono"))$("envio-telefono").value=d.telefono||"";
+  if($("envio-direccion"))$("envio-direccion").value=d.direccion||"";
+  if($("envio-barrio"))$("envio-barrio").value=d.barrio||"";
+  if($("envio-ciudad"))$("envio-ciudad").value=d.ciudad||(N&&N.ciudad?N.ciudad:"Bogotá");
+  if($("envio-departamento"))$("envio-departamento").value=d.departamento||"Bogotá D.C.";
+}
+function guardarDatosEnvio(d){
+  escribir("datos_envio",d);
+}
+function iniciarFormEnvio(){
+  ["envio-nombres","envio-telefono","envio-direccion","envio-barrio","envio-ciudad","envio-departamento"].forEach(function(id){
+    var el=$(id);
+    if(el)el.addEventListener("input",function(){this.classList.remove("invalido")});
+  });
+  cargarDatosEnvio();
 }
 function pagar(){
   if(!carrito.length){alert("Tu carrito está vacío");return}
+  cargarDatosEnvio();
   $("modal-total-monto").textContent=fmt(totalCarrito());
   $("modal-pago").classList.add("activo");cerrarCarrito();
 }
@@ -321,6 +342,49 @@ function copiarNumero(){
 function prepararWsp(el){
   if(!carrito.length){alert("Tu carrito está vacío");return false}
   if(!D.whatsapp){alert("Esta tienda aún no tiene número de WhatsApp configurado");return false}
+
+  var nomEl=$("envio-nombres"), docEl=$("envio-documento"), telEl=$("envio-telefono");
+  var dirEl=$("envio-direccion"), barEl=$("envio-barrio"), ciuEl=$("envio-ciudad"), depEl=$("envio-departamento");
+
+  var nombres=(nomEl?nomEl.value:"").trim();
+  var documento=(docEl?docEl.value:"").trim();
+  var telefono=(telEl?telEl.value:"").trim();
+  var direccion=(dirEl?dirEl.value:"").trim();
+  var barrio=(barEl?barEl.value:"").trim();
+  var ciudad=(ciuEl?ciuEl.value:"").trim();
+  var departamento=(depEl?depEl.value:"").trim();
+
+  [nomEl,telEl,dirEl,barEl,ciuEl,depEl].forEach(function(inp){if(inp)inp.classList.remove("invalido")});
+
+  var faltantes=[];
+  if(!nombres){faltantes.push("Nombres y apellidos");if(nomEl)nomEl.classList.add("invalido")}
+  if(!telefono){faltantes.push("Teléfono");if(telEl)telEl.classList.add("invalido")}
+  if(!direccion){faltantes.push("Dirección completa");if(dirEl)dirEl.classList.add("invalido")}
+  if(!barrio){faltantes.push("Barrio");if(barEl)barEl.classList.add("invalido")}
+  if(!ciudad){faltantes.push("Ciudad");if(ciuEl)ciuEl.classList.add("invalido")}
+  if(!departamento){faltantes.push("Departamento");if(depEl)depEl.classList.add("invalido")}
+
+  if(faltantes.length){
+    alert("Por favor completa los siguientes campos de envío obligatorios:\n- "+faltantes.join("\n- "));
+    if(nomEl&&!nombres)nomEl.focus();
+    else if(telEl&&!telefono)telEl.focus();
+    else if(dirEl&&!direccion)dirEl.focus();
+    else if(barEl&&!barrio)barEl.focus();
+    else if(ciuEl&&!ciudad)ciuEl.focus();
+    else if(depEl&&!departamento)depEl.focus();
+    return false;
+  }
+
+  guardarDatosEnvio({
+    nombres:nombres,
+    documento:documento,
+    telefono:telefono,
+    direccion:direccion,
+    barrio:barrio,
+    ciudad:ciudad,
+    departamento:departamento
+  });
+
   var m=metodos[metodoSel]||{nombre:"",tipo:""};
   var pedidoId="P"+Date.now().toString(36).toUpperCase();
   var msg="*Pedido "+D.nombre+"*\n*N° de pedido:* "+pedidoId+"\n\n*Artículos:*\n";
@@ -330,12 +394,25 @@ function prepararWsp(el){
   });
   msg+="\n*TOTAL:* "+fmt(totalCarrito())+" COP\n*Método de pago:* "+m.nombre+"\n\n";
   if(m.tipo!=="contraentrega")msg+="📸 *Adjunto el soporte del pago*\n\n";
-  msg+="*Datos de envío:*\n\nNombres:\nDocumento:\nTeléfono:\nDirección completa:\nBarrio:\nCiudad:\nDepartamento:";
+  msg+="*Datos de envío:*\n\n"
+     +"Nombres: "+nombres+"\n"
+     +"Documento: "+(documento||"No especificado")+"\n"
+     +"Teléfono: "+telefono+"\n"
+     +"Dirección completa: "+direccion+"\n"
+     +"Barrio: "+barrio+"\n"
+     +"Ciudad: "+ciudad+"\n"
+     +"Departamento: "+departamento;
+
   el.href="https://wa.me/"+D.whatsapp+"?text="+encodeURIComponent(msg);
   if(BACKEND){
     // Registra el pedido en Google Sheets (descuenta stock) sin frenar la apertura de WhatsApp
     try{fetch(BACKEND,{method:"POST",mode:"no-cors",keepalive:true,headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body:JSON.stringify({pedidoId:pedidoId,metodo:m.nombre,items:carrito.map(function(c){return{id:c.id,opcion:c.opcion,cantidad:c.cantidad}})})})}catch(e){}
+      body:JSON.stringify({
+        pedidoId:pedidoId,
+        metodo:m.nombre,
+        items:carrito.map(function(c){return{id:c.id,opcion:c.opcion,cantidad:c.cantidad}}),
+        cliente:{nombres:nombres,documento:documento,telefono:telefono,direccion:direccion,barrio:barrio,ciudad:ciudad,departamento:departamento}
+      })})}catch(e){}
   }
   setTimeout(function(){cerrarModal();vaciarCarrito()},300);return true;
 }
@@ -565,7 +642,7 @@ function iniciar(){
   carrito=carrito.filter(function(c){return c.cantidad>0});
   productos.forEach(function(p){p.elo=typeof elos[p.id]==="number"?elos[p.id]:1000});
   crearFiltros();mostrarProductos(productos);mostrarTop();mostrarRecomendados();duelo();
-  crearMetodos();actualizarCarrito();iniciarAsistente();
+  crearMetodos();actualizarCarrito();iniciarAsistente();iniciarFormEnvio();
 }
 cargarBackend(iniciar);
 })();

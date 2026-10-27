@@ -32,4 +32,9 @@ Abre `index.html` con doble clic.
 En Harvys pulsa **Abrir** y sube este .zip (o la carpeta completa). La tienda y sus fotos
 vuelven tal como estaban.
 
+## Modificaciones y Mejoras
+
+- **Formulario de datos de comprador y envío:** Se agregó un formulario en el modal de checkout para capturar los datos del cliente (Nombres, Documento, Teléfono, Dirección completa, Barrio, Ciudad y Departamento), validando los campos obligatorios y guardándolos localmente para que el pedido se envíe con los datos completos directamente a WhatsApp.
+> *este cambio fue hecho por mi :D*
+
 > El prototipo no procesa pagos reales; los pedidos llegan por WhatsApp.
